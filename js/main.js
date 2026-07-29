@@ -99,18 +99,12 @@
   });
 
   if (contactForm) {
-    contactForm.addEventListener("submit", (e) => {
-      e.preventDefault();
+    contactForm.addEventListener("submit", () => {
       const btn = contactForm.querySelector('button[type="submit"]');
-      const original = btn.textContent;
-      btn.textContent = "Sent — thank you";
+      if (!btn) return;
+      btn.textContent = "Sending…";
       btn.disabled = true;
-      setTimeout(() => {
-        btn.textContent = original;
-        btn.disabled = false;
-        contactForm.reset();
-        closeModal();
-      }, 1400);
+      // Real submit goes to FormSubmit (forever free) → your Gmail
     });
   }
 
