@@ -22,6 +22,7 @@
     pages.forEach((page) => {
       page.classList.toggle("active", page.id === `page-${target}`);
     });
+    document.body.classList.toggle("theme-light", target === "projects");
     navLinks.forEach((link) => {
       const isActive = link.getAttribute("data-nav") === target;
       link.classList.toggle("active", isActive);
@@ -99,12 +100,63 @@
   });
 
   if (contactForm) {
-    contactForm.addEventListener("submit", () => {
+    contactForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
       const btn = contactForm.querySelector('button[type="submit"]');
-      if (!btn) return;
-      btn.textContent = "Sending…";
-      btn.disabled = true;
-      // Real submit goes to FormSubmit (forever free) → your Gmail
+      const status = document.getElementById("form-status");
+      const original = btn ? btn.textContent : "Send message";
+
+      // Honeypot — bots only
+      const honey = contactForm.querySelector('[name="_honey"]');
+      if (honey && honey.value) return;
+
+      if (btn) {
+        btn.textContent = "Sending…";
+        btn.disabled = true;
+      }
+      if (status) {
+        status.textContent = "";
+        status.classList.remove("is-ok", "is-err");
+      }
+
+      const data = new FormData(contactForm);
+
+      try {
+        const res = await fetch("https://formsubmit.co/ajax/mcclasen199@gmail.com", {
+          method: "POST",
+          body: data,
+          headers: { Accept: "application/json" },
+        });
+
+        if (!res.ok) throw new Error("send failed");
+
+        if (status) {
+          status.textContent = "Sent — I’ll get back to you soon.";
+          status.classList.add("is-ok");
+        }
+        if (btn) btn.textContent = "Sent";
+        contactForm.reset();
+        setTimeout(() => {
+          closeModal();
+          if (btn) {
+            btn.textContent = original;
+            btn.disabled = false;
+          }
+          if (status) {
+            status.textContent = "";
+            status.classList.remove("is-ok", "is-err");
+          }
+        }, 1600);
+      } catch (err) {
+        if (status) {
+          status.textContent = "Couldn’t send. Email me at mcclasen199@gmail.com";
+          status.classList.add("is-err");
+        }
+        if (btn) {
+          btn.textContent = original;
+          btn.disabled = false;
+        }
+      }
     });
   }
 
@@ -171,6 +223,27 @@
       el.style.transform = "translateY(18px)";
       el.style.transitionDelay = `${(i % 6) * 0.05}s`;
       io.observe(el);
+    });
+  }
+
+  /* ---------- Projects 4-Option View Switcher ---------- */
+  const projectsPage = document.getElementById("page-projects");
+  const viewButtons = document.querySelectorAll(".view-btn[data-view]");
+  if (projectsPage && viewButtons.length) {
+    viewButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const viewCols = btn.getAttribute("data-view");
+        viewButtons.forEach((b) => {
+          b.classList.toggle("active", b.getAttribute("data-view") === viewCols);
+        });
+        projectsPage.classList.remove(
+          "view-cols-1",
+          "view-cols-2",
+          "view-cols-3",
+          "view-cols-4"
+        );
+        projectsPage.classList.add(`view-cols-${viewCols}`);
+      });
     });
   }
 })();
